@@ -28,6 +28,7 @@ from .config import DEFAULT_EXEMPT_PATHS, AuthMode, FleetConfig
 from .egress import EgressError, EgressPolicy, make_async_client
 from .logging import CallLoggingMiddleware
 from .secretscan import SecretLeakError, install_secret_scan, scrub
+from .telemetry import install_telemetry, setup_telemetry
 
 __all__ = [
     "FleetConfig",
@@ -42,6 +43,8 @@ __all__ = [
     "SecretLeakError",
     "install_secret_scan",
     "scrub",
+    "setup_telemetry",
+    "install_telemetry",
     "build_app",
     "mount_controls",
     "harden",
@@ -83,10 +86,12 @@ def egress_client(config: FleetConfig, **kwargs: object):
 
 
 def harden(mcp: object, config: FleetConfig) -> Starlette:
-    """One-call hardening: install tool-layer secret-scan, then build the ASGI app.
+    """One-call hardening: install tool-layer controls, then build the ASGI app.
 
-    Egress is call-site scoped — use :func:`egress_client` where the server
-    builds its outbound httpx clients.
+    Order: secret-scan wraps the tool, then telemetry wraps that (so spans/metrics
+    measure the full scrubbed call). Telemetry is configured + installed only when
+    ``otlp_endpoint`` is set. Egress is call-site scoped — use :func:`egress_client`
+    where the server builds its outbound httpx clients.
     """
     if config.secret_scan:
         install_secret_scan(
@@ -95,4 +100,7 @@ def harden(mcp: object, config: FleetConfig) -> Starlette:
             mode=config.secret_scan_mode,
             server_name=config.server_name,
         )
+    if config.otlp_endpoint:
+        setup_telemetry(config)
+        install_telemetry(mcp, config)
     return build_app(mcp, config)

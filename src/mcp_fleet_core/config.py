@@ -53,6 +53,16 @@ class FleetConfig(BaseModel):
         description="Secret VALUES to scrub from tool results (server resolves from Infisical).",
     )
 
+    otlp_endpoint: str | None = Field(
+        None,
+        description="OTLP gRPC endpoint (e.g. otel-collector:4317). Unset = logging only.",
+    )
+    service_version: str | None = Field(None, description="Reported as service.version.")
+    metric_export_interval_ms: int = Field(
+        30_000,
+        description="Periodic metric export interval (ms); mirrors the gateway's 30s default.",
+    )
+
     def model_post_init(self, _context: object) -> None:
         if self.auth_mode in ("bearer", "both") and not self.auth_token:
             raise ValueError(

@@ -49,7 +49,7 @@ their own Starlette app.
 | Structured call logging (server/path/status/duration) | ✅ 0.1.0 | `--log-calls` |
 | Egress allowlist (httpx client hook) | ✅ 0.2.0 | `allowHosts` / `--block-network` |
 | Secret-scan on tool results (redact/block) | ✅ 0.2.0 | `--block-secrets` |
-| OTEL exporter | 🔜 [#5](https://github.com/jlixfeld/mcp-fleet-core/issues/5) | telemetry |
+| OTEL spans + metrics (per tool call) | ✅ 0.3.0 (`[otel]` extra) | telemetry |
 
 `build_app` wires the ASGI controls (auth, logging). `harden(mcp, config)` also
 installs the tool-layer secret-scan and returns the app. Secret-scan runs at the
@@ -67,6 +67,19 @@ cfg = FleetConfig(
 )
 app = harden(mcp, cfg)                 # auth + logging + secret-scan
 client = egress_client(cfg)            # outbound httpx, allowlist-enforced
+```
+
+### Telemetry
+
+Set `otlp_endpoint` and install the `[otel]` extra; `harden()` then emits a span
++ `mcp.tool.calls` / `mcp.tool.duration` / `mcp.tool.errors` per tool call,
+tagged `mcp.server.name` / `mcp.tool.name`. Unset endpoint or missing extra =
+no-op (stdlib call logging stays the baseline; never hard-depends on a running
+collector). Push OTLP/gRPC → the fleet OTEL Collector → Prometheus + Grafana
+(tailnet-private, ports 8100–8109).
+
+```toml
+dependencies = ["mcp-fleet-core[otel] @ git+https://github.com/jlixfeld/mcp-fleet-core.git"]
 ```
 
 ## Auth modes
