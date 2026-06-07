@@ -47,11 +47,27 @@ their own Starlette app.
 |---|---|---|
 | Bearer auth (constant-time, health-exempt) | ✅ 0.1.0 | `MCP_GATEWAY_AUTH_TOKEN` |
 | Structured call logging (server/path/status/duration) | ✅ 0.1.0 | `--log-calls` |
-| Egress allowlist | 🔜 roadmap | `allowHosts` / `--block-network` |
-| Secret-scan response middleware | 🔜 roadmap | `--block-secrets` |
+| Egress allowlist (httpx client hook) | ✅ 0.2.0 | `allowHosts` / `--block-network` |
+| Secret-scan on tool results (redact/block) | ✅ 0.2.0 | `--block-secrets` |
+| OTEL exporter | 🔜 [#5](https://github.com/jlixfeld/mcp-fleet-core/issues/5) | telemetry |
 
-Egress is primarily a docker-compose `networks` deny-by-default concern; the
-library will add an httpx event-hook for in-process defense + audit.
+`build_app` wires the ASGI controls (auth, logging). `harden(mcp, config)` also
+installs the tool-layer secret-scan and returns the app. Secret-scan runs at the
+MCP tool-result layer (not ASGI) so it never buffers/breaks the streamable-HTTP
+stream. Egress is primarily a docker-compose `networks` deny-by-default concern;
+`egress_client(config)` adds an in-process httpx hook for defense + audit:
+
+```python
+from mcp_fleet_core import FleetConfig, harden, egress_client
+
+cfg = FleetConfig(
+    server_name="strattrader", auth_mode="bearer", auth_token=tok,
+    allow_hosts=["api.ibkr.com:443", "timescaledb:5432"],
+    secret_scan=True, secret_scan_mode="redact", redact_values=[*infisical_values],
+)
+app = harden(mcp, cfg)                 # auth + logging + secret-scan
+client = egress_client(cfg)            # outbound httpx, allowlist-enforced
+```
 
 ## Auth modes
 

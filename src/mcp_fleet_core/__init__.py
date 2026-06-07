@@ -25,7 +25,9 @@ from starlette.applications import Starlette
 
 from .auth import BearerAuthMiddleware
 from .config import DEFAULT_EXEMPT_PATHS, AuthMode, FleetConfig
+from .egress import EgressError, EgressPolicy, make_async_client
 from .logging import CallLoggingMiddleware
+from .secretscan import SecretLeakError, install_secret_scan, scrub
 
 __all__ = [
     "FleetConfig",
@@ -33,8 +35,16 @@ __all__ = [
     "DEFAULT_EXEMPT_PATHS",
     "BearerAuthMiddleware",
     "CallLoggingMiddleware",
+    "EgressPolicy",
+    "EgressError",
+    "make_async_client",
+    "egress_client",
+    "SecretLeakError",
+    "install_secret_scan",
+    "scrub",
     "build_app",
     "mount_controls",
+    "harden",
 ]
 
 
@@ -60,7 +70,29 @@ def build_app(mcp: object, config: FleetConfig) -> Starlette:
     """Build the hardened ASGI app from a FastMCP instance.
 
     ``mcp`` is an ``mcp.server.fastmcp.FastMCP``; we call its
-    ``streamable_http_app()`` and wrap it with the fleet controls.
+    ``streamable_http_app()`` and wrap it with the ASGI controls (auth, logging).
+    Tool-layer controls (secret-scan) are applied by :func:`harden`.
     """
     app = mcp.streamable_http_app()  # type: ignore[attr-defined]
     return mount_controls(app, config)
+
+
+def egress_client(config: FleetConfig, **kwargs: object):
+    """Build an egress-checked ``httpx.AsyncClient`` from ``config.allow_hosts``."""
+    return make_async_client(EgressPolicy(config.allow_hosts), **kwargs)
+
+
+def harden(mcp: object, config: FleetConfig) -> Starlette:
+    """One-call hardening: install tool-layer secret-scan, then build the ASGI app.
+
+    Egress is call-site scoped — use :func:`egress_client` where the server
+    builds its outbound httpx clients.
+    """
+    if config.secret_scan:
+        install_secret_scan(
+            mcp,
+            secret_values=config.redact_values,
+            mode=config.secret_scan_mode,
+            server_name=config.server_name,
+        )
+    return build_app(mcp, config)
