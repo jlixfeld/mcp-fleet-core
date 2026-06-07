@@ -1,6 +1,6 @@
 [project]
 name = "mcp-fleet-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shared cross-cutting controls for the fleet's FastMCP servers: bearer auth, call logging, egress allowlist, secret-scan"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -8,6 +8,7 @@ dependencies = [
     "starlette>=0.37",
     "mcp[cli]>=1.5.0",
     "pydantic>=2.0",
+    "httpx>=0.27",
 ]
 
 [build-system]

@@ -39,6 +39,20 @@ class FleetConfig(BaseModel):
     )
     log_calls: bool = Field(True, description="Emit a structured log line per tool call.")
 
+    allow_hosts: tuple[str, ...] = Field(
+        (),
+        description="Egress allowlist (host or host:port) for outbound httpx clients.",
+    )
+    secret_scan: bool = Field(False, description="Scan tool results for secret material.")
+    secret_scan_mode: Literal["redact", "block"] = Field(
+        "redact",
+        description="redact: replace with [REDACTED]; block: raise on any hit.",
+    )
+    redact_values: tuple[str, ...] = Field(
+        (),
+        description="Secret VALUES to scrub from tool results (server resolves from Infisical).",
+    )
+
     def model_post_init(self, _context: object) -> None:
         if self.auth_mode in ("bearer", "both") and not self.auth_token:
             raise ValueError(
