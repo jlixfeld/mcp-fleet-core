@@ -47,8 +47,7 @@ def setup_telemetry(config: FleetConfig):
         return None
     if not _otel_available():
         raise RuntimeError(
-            "otlp_endpoint set but the 'otel' extra is not installed; "
-            "install mcp-fleet-core[otel]"
+            "otlp_endpoint set but the 'otel' extra is not installed; install mcp-fleet-core[otel]"
         )
 
     from opentelemetry import metrics, trace

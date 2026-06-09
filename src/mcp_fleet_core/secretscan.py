@@ -30,12 +30,14 @@ ScanMode = Literal["redact", "block"]
 # Conservative, high-signal patterns only. Each must be unlikely to match
 # ordinary numeric/financial/health payloads.
 DEFAULT_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\bsk-[A-Za-z0-9]{20,}\b"),          # OpenAI-style
-    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}\b"),   # GitHub tokens
-    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),             # AWS access key id
-    re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"), # Slack
-    re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\."          # JWT (header.payload.sig)
-               r"[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
+    re.compile(r"\bsk-[A-Za-z0-9]{20,}\b"),  # OpenAI-style
+    re.compile(r"\bgh[pousr]_[A-Za-z0-9]{36,}\b"),  # GitHub tokens
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),  # AWS access key id
+    re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"),  # Slack
+    re.compile(
+        r"\beyJ[A-Za-z0-9_-]{10,}\."  # JWT (header.payload.sig)
+        r"[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"
+    ),
 )
 
 
