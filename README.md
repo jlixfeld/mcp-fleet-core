@@ -30,11 +30,14 @@ from mcp_fleet_core import FleetConfig, build_app
 mcp = FastMCP("strattrader", host="127.0.0.1", port=8040)
 # register tools + health routes...
 
-app = build_app(mcp, FleetConfig(
-    server_name="strattrader",
-    auth_mode="bearer",          # bearer | secret_path | both | off
-    auth_token=resolved_token,   # resolve from Infisical; library never reads Infisical
-))
+app = build_app(
+    mcp,
+    FleetConfig(
+        server_name="strattrader",
+        auth_mode="bearer",  # bearer | secret_path | both | off
+        auth_token=resolved_token,  # resolve from Infisical; library never reads Infisical
+    ),
+)
 # serve `app` with uvicorn instead of mcp.run_streamable_http_async()
 ```
 
@@ -61,12 +64,16 @@ stream. Egress is primarily a docker-compose `networks` deny-by-default concern;
 from mcp_fleet_core import FleetConfig, harden, egress_client
 
 cfg = FleetConfig(
-    server_name="strattrader", auth_mode="bearer", auth_token=tok,
+    server_name="strattrader",
+    auth_mode="bearer",
+    auth_token=tok,
     allow_hosts=["api.ibkr.com:443", "timescaledb:5432"],
-    secret_scan=True, secret_scan_mode="redact", redact_values=[*infisical_values],
+    secret_scan=True,
+    secret_scan_mode="redact",
+    redact_values=[*infisical_values],
 )
-app = harden(mcp, cfg)                 # auth + logging + secret-scan
-client = egress_client(cfg)            # outbound httpx, allowlist-enforced
+app = harden(mcp, cfg)  # auth + logging + secret-scan
+client = egress_client(cfg)  # outbound httpx, allowlist-enforced
 ```
 
 ### Telemetry
